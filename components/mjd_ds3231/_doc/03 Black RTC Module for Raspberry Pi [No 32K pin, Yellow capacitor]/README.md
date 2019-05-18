@@ -7,11 +7,17 @@ Differences with the ZS042 board:
 - It CANNOT be used as an accurate external crystal oscillator 32Khz for the ESP32. Because the board has no output pin for that signal :(
 - It does NOT contain the EEPROM 24C342 memory chip from Atmel (which we do not need).
 
+
+
 ## Example ESP-IDF project
 my_ds3231_clock_using_lib
 
+
+
 ## Shop Product.
 DS3231 for Raspberry Pi DS3231 RTC Real Time Clock Module
+
+
 
 ### Board PIN layout
 ```
@@ -24,22 +30,32 @@ DS3231 for Raspberry Pi DS3231 RTC Real Time Clock Module
 
 See also the images.
 
+
+
 ### Wiring instructions for using the I2C protocol
 - Connect RTC board pin VCC to the MCU pin VCC 3V.
 - Connect RTC board pin SDA to a MCU GPIO#17 (Huzzah32 #17 bottomleft-1)(Lolin32lite #15 bottomleft-1).
 - Connect RTC board pin SCL to a MCU GPIO#21 (Huzzah32 #21 bottomleft)(Lolin32lite #13 bottomleft).
 - Connect RTC board pin GND to the MCU pin GND.
 
+
+
 ## Sensor I2C Address
 - I2C Device address 0x68 = RTC Maxim Integrated DS3231.
 
+
+
 ## Sensor I2C protocol
 - Sensor acts as a slave.
+
+
 
 ## Data Sheet
 [Go to the _doc directory for more documents.]
 
 https://www.maximintegrated.com/en/products/digital/real-time-clocks/DS3231.html
+
+
 
 ## FAQ
 - OK 3.3V - 5V.
@@ -58,6 +74,8 @@ https://www.maximintegrated.com/en/products/digital/real-time-clocks/DS3231.html
           When set to logic 1, the oscillator is stopped when the DS3231 switches to VBAT. \
           This bit is clear (logic 0) when power is first applied. \
           ***When the DS3231 is powered by VCC, the oscillator is always on regardless of the status of the EOSC bit.***
+
+
 
 ## Known ISSUES
 - It has no output pin for the 32Khz oscillator signal :(

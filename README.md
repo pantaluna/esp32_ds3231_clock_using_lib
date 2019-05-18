@@ -1,8 +1,8 @@
 ## Project Description
 This project demonstrates the basics of using the MJD component "mjd_ds3231" for the following RTC Real Time Clock boards:
-1. The blue rectangular large ZS042 DS3231 RTC Real Time Clock Module.
-2. The black smaller model (with yellow capacitor) for Raspberry Pi RTC Real Time Clock Module.
-3. The blue circular ChronoDot V2 PCB Real Time Clock Module.
+1. The blue circular ChronoDot V2 PCB Real Time Clock Module.
+2. The blue rectangular large ZS042 DS3231 RTC Real Time Clock Module.
+3. The black smaller model (with yellow capacitor) for Raspberry Pi RTC Real Time Clock Module.
 
 Use this project to get insights in how to use this component.
 
@@ -26,7 +26,7 @@ Goto the subdirectory "components/mjd_ds3231" for installation/wiring/usage inst
 ```
 mkdir ~/esp
 cd    ~/esp
-git clone -b v3.3 --recursive https://github.com/espressif/esp-idf.git esp-idf-v3.2
+git clone -b v3.2 --recursive https://github.com/espressif/esp-idf.git esp-idf-v3.2
 ```
 
 - A C language editor or the Eclipse IDE CDT (instructions also @ http://esp-idf.readthedocs.io/en/latest/get-started/index.html).

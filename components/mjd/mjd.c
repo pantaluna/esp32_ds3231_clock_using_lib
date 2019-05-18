@@ -157,7 +157,7 @@ void mjd_string_prepend(char* param_ptr_string, const char* param_ptr_part) {
     memmove(param_ptr_string + len_part, param_ptr_string, strlen(param_ptr_string) + 1);
 
     for (i = 0; i < len_part; ++i)
-    {
+            {
         param_ptr_string[i] = param_ptr_part[i];
     }
 }
@@ -205,8 +205,8 @@ esp_err_t mjd_hexstring_to_uint8s(const char * param_ptr_input, size_t param_len
 
     ESP_LOGV(TAG, "mjd_hexstring_to_uint8s() param_ptr_input len=%u (HEXDUMP)", param_len_input);
     ESP_LOG_BUFFER_HEXDUMP(TAG, param_ptr_input, param_len_input + 1, ESP_LOG_VERBOSE);  // +1 to see the \0
-    ESP_LOGV(TAG, "mjd_hexstring_to_uint8s() param_ptr_output len=%u (HEXDUMP)", param_len_input/2);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, param_ptr_output, param_len_input/2, ESP_LOG_VERBOSE);
+    ESP_LOGV(TAG, "mjd_hexstring_to_uint8s() param_ptr_output len=%u (HEXDUMP)", param_len_input / 2);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, param_ptr_output, param_len_input / 2, ESP_LOG_VERBOSE);
 
     // LABEL
     cleanup: ;
@@ -222,6 +222,36 @@ esp_err_t mjd_string_to_hexstring(const char * param_ptr_input, size_t param_len
 esp_err_t mjd_hexstring_to_string(const char * param_ptr_input, size_t param_len_input, char * param_ptr_output) {
 
     return mjd_hexstring_to_uint8s(param_ptr_input, param_len_input, (uint8_t *) param_ptr_output);
+}
+
+/**********
+ * CRYPTO
+ *
+ * @doc https://en.wikipedia.org/wiki/XOR_cipher
+ *
+ */
+esp_err_t mjd_crypto_xor_cipher(const uint8_t param_key, uint8_t* param_ptr_values, const size_t param_values_len) {
+    // Only byte keys are supported.
+    esp_err_t f_retval = ESP_OK;
+
+    if (param_ptr_values == NULL) { // ERROR
+        f_retval = ESP_ERR_INVALID_ARG;
+        ESP_LOGE(TAG, "%s().  invalid param_ptr_values (NULL) | err %i (%s)", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
+    if (param_values_len == 0) { // WARNING
+        ESP_LOGW(TAG, "%s().  param_values_len is zero | err %i (%s)", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+    }
+
+    for (int iter = 0; iter < param_values_len; iter++) {
+        *(param_ptr_values + iter) ^= param_key;
+    }
+
+    //LQBEL
+    cleanup:;
+
+    return f_retval;
 }
 
 /**********
@@ -251,8 +281,8 @@ void mjd_log_time() {
     if (current_time_string == NULL) {
         ESP_LOGE(TAG, "Error converting the current time using ctime().");
     }
-    if (current_time_string[strlen(current_time_string)-1] == '\n') {
-        current_time_string[strlen(current_time_string)-1] = '\0';
+    if (current_time_string[strlen(current_time_string) - 1] == '\n') {
+        current_time_string[strlen(current_time_string) - 1] = '\0';
     }
     ESP_LOGI(TAG, "*** %s %s", buffer, current_time_string);
 }
@@ -307,10 +337,11 @@ void mjd_rtos_wait_forever() {
 void mjd_log_chip_info() {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
+    ESP_LOGI(TAG, "This is an ESP32 chip");
+    ESP_LOGI(TAG, "  [ESP-IDF Version: %s]", esp_get_idf_version());
+
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-
-    ESP_LOGI(TAG, "This is an ESP32 chip");
     ESP_LOGI(TAG, "  CPU cores:    %u", chip_info.cores);
     ESP_LOGI(TAG, "  Silicon rev.: %u", chip_info.revision);
     ESP_LOGI(TAG, "  CPU clock frequency (Hz):   %d", esp_clk_cpu_freq());
@@ -319,7 +350,20 @@ void mjd_log_chip_info() {
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "", (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
     ESP_LOGI(TAG, "  Flash:        %dMB %s", spi_flash_get_chip_size() / 1024 / 1024,
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-    ESP_LOGI(TAG, "  [ESP-IDF Version: %s]", esp_get_idf_version());
+
+    uint8_t mac[6];
+    ESP_LOGI(TAG, "  MAC Addresses:   "MJDMACFMT, MJDMAC2STR(mac));
+    esp_efuse_mac_get_default(mac);
+    ESP_LOGI(TAG, "    Base:   "MJDMACFMT, MJDMAC2STR(mac));
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    ESP_LOGI(TAG, "    STA:    "MJDMACFMT, MJDMAC2STR(mac));
+    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
+    ESP_LOGI(TAG, "    SOFTAP: "MJDMACFMT, MJDMAC2STR(mac));
+    esp_read_mac(mac, ESP_MAC_BT);
+    ESP_LOGI(TAG, "    BT:     "MJDMACFMT, MJDMAC2STR(mac));
+    esp_read_mac(mac, ESP_MAC_ETH);
+    ESP_LOGI(TAG, "    ETH:    "MJDMACFMT, MJDMAC2STR(mac));
+
     ESP_LOGI(TAG, "");
 }
 
@@ -396,7 +440,8 @@ esp_err_t mjd_log_memory_statistics() {
 
     mjd_meminfo_t meminfo;
     mjd_get_memory_statistics(&meminfo);
-    ESP_LOGI(TAG, "ESP free HEAP space: %u bytes | FreeRTOS free STACK space (current task): %u bytes", meminfo.free_esp_heap,
+    ESP_LOGI(TAG, "ESP free HEAP space: %u bytes | FreeRTOS free STACK space (current task): %u bytes",
+            meminfo.free_esp_heap,
             meminfo.free_rtos_stack);
 
     return ESP_OK;
@@ -431,12 +476,12 @@ void mjd_log_wakeup_details() {
     /*
      * verify the wakeup reason
      * esp_sleep.h
-         ESP_SLEEP_WAKEUP_UNDEFINED,    //! In case of deep sleep, reset was not caused by exit from deep sleep
-         ESP_SLEEP_WAKEUP_EXT0,         //! Wakeup caused by external signal using RTC_IO
-         ESP_SLEEP_WAKEUP_EXT1,         //! Wakeup caused by external signal using RTC_CNTL
-         ESP_SLEEP_WAKEUP_TIMER,        //! Wakeup caused by timer
-         ESP_SLEEP_WAKEUP_TOUCHPAD,     //! Wakeup caused by touchpad
-         ESP_SLEEP_WAKEUP_ULP,          //! Wakeup caused by ULP program
+     ESP_SLEEP_WAKEUP_UNDEFINED,    //! In case of deep sleep, reset was not caused by exit from deep sleep
+     ESP_SLEEP_WAKEUP_EXT0,         //! Wakeup caused by external signal using RTC_IO
+     ESP_SLEEP_WAKEUP_EXT1,         //! Wakeup caused by external signal using RTC_CNTL
+     ESP_SLEEP_WAKEUP_TIMER,        //! Wakeup caused by timer
+     ESP_SLEEP_WAKEUP_TOUCHPAD,     //! Wakeup caused by touchpad
+     ESP_SLEEP_WAKEUP_ULP,          //! Wakeup caused by ULP program
      */
     char wakeup_reason[128];
 
