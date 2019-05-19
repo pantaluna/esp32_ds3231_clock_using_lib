@@ -1,17 +1,17 @@
 # ZS042 blue large PCB model DS3231 RTC Real Time Clock Module
 This board is typically used as an RTC Real Time Clock.
 
-It can also be used as an accurate RTC external crystal oscillator 32Khz for the ESP32.
+It can also be used as an accurate RTC external 32Khz oscillator for the ESP32.
 
 
 
 ## Example ESP-IDF project
-my_ds3231_clock_using_lib
+esp32_ds3231_clock_using_lib
 
 
 
 ## Shop Product.
-DS3231 ZS042 RTC Real Time Clock Module
+DS3231 ZS042 RTC Real Time Clock Module.
 
 
 
@@ -28,21 +28,22 @@ See also the diagram images.
 
 
 
-## Remove resistors to reduce current usage and make the module safer
+## Remove resistors to reduce current consumption and make the module safer
 - Remove the charging circuit resistor and the power LED resistor from the circuit board. Open the image "ZS042 DS3231 RTC Real Time Clock -  Remove these 2 resistors.jpg" in the "_doc" directory for the exact location of these resistors on the board. Detailed information @ https://thecavepearlproject.org/2016/10/27/diy-arduino-promini-data-logger-2016-build-update/
-- 
+
+
 
 ### Wiring instructions for using the I2C protocol
 - Connect RTC board pin VCC to the MCU pin VCC 3V.
 - Connect RTC board pin GND to the MCU pin GND.
-- Connect RTC board pin SCL to a MCU GPIO#21 (Huzzah32 #21 bottomleft)(Lolin32lite #13 bottomleft).
-- Connect RTC board pin SDA to a MCU GPIO#17 (Huzzah32 #17 bottomleft-1)(Lolin32lite #15 bottomleft-1).
+- Connect RTC board pin SCL to a MCU GPIO#21 (Huzzah32 #21 bottomleft).
+- Connect RTC board pin SDA to a MCU GPIO#17 (Huzzah32 #17 bottomleft-1).
 
 
 
 ## Sensor I2C Address
 - I2C Device address 0x68 = the RTC Maxim Integrated DS3231.
-- I2C Device address 0x57 = the EEPROM Atmel 24C324. This chip is not used directly. The A0, A1 and A2 pads (open by default)) are used for changing the I2C address of the EEPROM memory chip. It is OK to leave the pads open. I have no information how these pads affect the I2C address.
+- I2C Device address 0x57 = the EEPROM Atmel 24C324. This chip is not used directly. The A0, A1 and A2 pads (open by default) are used for changing the I2C address of the EEPROM memory chip. It is OK to leave the pads open. I have no information how these pads affect the I2C address.
 
 
 
@@ -51,15 +52,19 @@ See also the diagram images.
 
 
 
-## SOP: setup the ZS042 board as an external crystal oscillator 32Khz for the ESP32
+## SOP: setup the RTC board as an external 32Khz oscillator for the ESP32
 
-Goto document "Setup as RTC external 32Khz oscillator for the ESP32.md"
+Goto document ../"Setup RTC as external 32Khz oscillator for the ESP32.md"
+
+
 
 ## Data Sheet
 
 [Go to the _doc directory for more documents.]
 
 https://www.maximintegrated.com/en/products/digital/real-time-clocks/DS3231.html
+
+
 
 ## FAQ
 - OK 3.3V - 5V.
@@ -86,7 +91,7 @@ https://www.maximintegrated.com/en/products/digital/real-time-clocks/DS3231.html
 ## Important: use CR2032 3V non-rechargeable Lithium Batteries and disable the battery charging circuit
 - The DS3231 RTC and 24C32 EEPROM chips themselves do nothing to manage the charging of the battery.
 - The ZS-042 board's additional battery charging circuit does not work when using a 3.3V microcontroller board; the charging circuit will only waste power. The circuit is also unsafe when using a 5V microcontroller board in combination with LIR2032 batteries.
-- So please use CR2032 3V non-rechargeable Lithium batteries; a CR2032 will backup the RTC for many years. Do NOT use LIR2032 3.6V Li-Ion Rechargeable batteries because a) the battery will not charge at all; b) They cost significantly more than standard C2032 batteries.
+- So please use CR2032 3V non-rechargeable Lithium batteries; a CR2032 will backup the RTC for many years. Do **not** use LIR2032 3.6V Li-Ion Rechargeable batteries because a) the battery will not charge at all; b) They cost significantly more than standard C2032 batteries.
 
 
 
