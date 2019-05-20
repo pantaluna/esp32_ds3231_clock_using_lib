@@ -1,31 +1,34 @@
 # SOP: setup the RTC board as an external oscillator 32Khz for the ESP32
 
 ## General
-The ESP32's internal 150Hz crystal oscillator is not very accurate for e.g. data loggers which wake up from deep sleep at regular intervals. It deviates +-1 minute every 4 hours.
+The ESP32's internal 150Hz crystal oscillator is not very accurate for e.g. data loggers which wake up from deep sleep at exact regular intervals. It deviates +-1 minute every 4 hours.
 
 Luckily the ESP32 also supports a more accurate RTC external 32kHz oscillator.
 
-**The 32K pin** of the RTC board is the output signal of the 32K oscillator. It is **open-drain** so you need to attach **a (10K) pullup resistor** to read this signal from a microcontroller pin.
+The ESP32 hardware design guidelines (as documented in KConfig ESP32_RTC_CLOCK_SOURCE) state that the external clock signal must be connected to the 32K_XP pin. The amplitude should be < 1.0V in case of a square wave signal. The common mode voltage should be 0.1 < Vcm < 0.5Vamp, where Vamp is the signal amplitude. A 1 - 10 nF capacitor must be connected between 32K_XN pin and GND.
 
-@important The ZS-042 RTC board and the Chronodot RTC board can be used for this purpose. The black/yellow RTC board cannot be used as such because the 32K output pin of the DS3231 chip is not exposed on the PCB.
+**The 32K pin of the RTC board** is the square wave output signal of the 32K oscillator. It is **open-drain** so you need to attach **a (10K) pullup resistor** to read this signal correctly from a microcontroller pin.
 
-@important A battery on the RTC board is not required if you only deploy this board as an RTC external 32Khz oscillator for the ESP32.
+@important The ZS-042 RTC board and the Chronodot RTC board can be used for this purpose. The black/yellow RTC board cannot be used because the 32K output pin of the DS3231 chip is not exposed on that breakout board.
 
 @important The setup to use the DS3231 as an RTC Real Time Clock via the I2C protocol, as described in the main document for each RTC board, is not required.
+
+@important A battery on the RTC board is not required if you only use this board as an external 32Khz oscillator for the ESP32.
 
 
 
 ## Wiring
 ```
-- Connect RTC board pin VCC => microcontroller pin VCC 3.3V
-- Connect RTC board pin GND => microcontroller pin GND
-- Connect RTC board pin "32K" => microcontroller pin GPIO#33 (ESP32 pin 32K_XN [not 32K_XP!])
-- Connect RTC board pin "32K" => 10K pullup resistor => microcontroller pin VCC 3.3V
+- RTC board pin VCC => ESP32 pin VCC 3.3V
+- RTC board pin GND => ESP32 pin GND
+- RTC board pin 32K => 10K pullup resistor => a power rail < 1.0V > 0.5V
+- ESP32 pin GPIO#32 (pin 32K_XP) => RTC board pin 32K
+- ESP32 pin GPIO#33 (pin 32K_XN) => 1-10nF ceramic capacitor => GND
 ```
 
-https://learn.adafruit.com/adafruit-ds3231-precision-rtc-breakout
+A power rail of 0.8V can be made from VCC 3.3V using a voltage divider with Rtop=100K and Rbottom to 33K.
 
-The Espressif document "ESP32 Hardware Design Guidelines V2.7 of April2019" section "2.1.4.2 RTC (Optional)" specifies a different wiring using the 32K_XP/32K_XN pin but that doesn't work for me currently.
+https://learn.adafruit.com/adafruit-ds3231-precision-rtc-breakout
 
 
 

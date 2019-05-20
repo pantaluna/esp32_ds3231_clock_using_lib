@@ -1,7 +1,7 @@
 # Adafruit ChronoDot V2.0
 Differences with the ZS042 board:
 - Much smaller board.
-- It does NOT contain the EEPROM 24C342 memory chip from Atmel. Which I do not need.
+- It does NOT contain an EEPROM 24C342 memory chip from Atmel. Which I do not need.
 - It does not contain a battery charger circuit. Which I do not need.
 - It consumes less current.
 

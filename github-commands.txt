@@ -42,7 +42,7 @@ git commit -m "Updated"
 git config credential.helper store
 git push --set-upstream origin master
 
-git tag --annotate v1.41 --message "Update component mjd_ds3231: documentation using the board as a RTC external 32Khz oscillator"
+git tag --annotate v1.42 --message "Update component mjd_ds3231: documentation using the board as a RTC external 32Khz oscillator"
 git push origin --tags
 
 git describe --tags --dirt
