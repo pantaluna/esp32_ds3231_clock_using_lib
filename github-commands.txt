@@ -18,6 +18,7 @@ git add .
 git commit -m "First commit"
 git remote add origin https://github.com/pantaluna/${DIR_REPO_NAME}.git
 
+git config credential.helper store
 git push --set-upstream origin master
 
 git remote show origin
@@ -31,7 +32,7 @@ git rev-parse HEAD
 git status
 ```
 
-SOP Upload source updates to GitHub
+*TODO Jul16,2019* SOP Upload source updates to GitHub
 -----------------------------------
 ```
 DIR_REPO_NAME=esp32_ds3231_clock_using_lib
@@ -42,7 +43,7 @@ git commit -m "Updated"
 git config credential.helper store
 git push --set-upstream origin master
 
-git tag --annotate v1.42 --message "Update component mjd_ds3231: documentation using the board as a RTC external 32Khz oscillator"
+git tag --annotate v1.6 --message "Update documentation"
 git push origin --tags
 
 git describe --tags --dirt

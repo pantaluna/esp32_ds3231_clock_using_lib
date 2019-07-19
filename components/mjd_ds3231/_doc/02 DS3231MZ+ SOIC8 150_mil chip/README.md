@@ -1,14 +1,11 @@
-# Adafruit ChronoDot V2.0
-This board is typically used as an RTC Real Time Clock. It can also be used as an accurate RTC external 32Khz oscillator for the ESP32.
+# DS3231MZ+ mini breakout board
+This is a manually soldered breakout board. It can also be made using an SOIC8 socket adapter (see images).
 
-Contains 1x chip Maxim Integrated "**DS3231SN#** I2C-Integrated RTC/TCXO/Crystal" (the biggest chip on the PCB) in package SOIC16.
+Contains 1x chip Maxim Integrated "**DS3231SMZ+** RTC" in package SOIC8.
 
-Differences with the ZS042 board:
+It only needs one extra 100nF ceramic capacitor between the pins VCC and GND.
 
-- Much smaller board.
-- Less power consumption.
-- Does NOT contain an EEPROM 24C342 memory chip from Atmel. Which I do not need.
-- Does not contain a battery charger circuit. Which I do not need.
+The breakout board does not contain a socket for a battery but if you use the board as a 32KHz external crystal oscillator for the ESP32 then the battery is not needed.
 
 
 
@@ -21,32 +18,17 @@ Differences with the ZS042 board:
 
 
 ## Shop Product.
-1pcs RTC real-time clock module DS3231SN ChronoDot V2.0 I2C for Arduino Memory DS3231 module
+DS3231MZ+ IC
 
-https://www.adafruit.com/product/255
+100nF XR7 ceramic capacitor
 
 
 
 ### Board PIN layout
-Pins @ left side:
 
-```
-1 BAT (not used)
-2 32K (only used when the board functions as an external 32KHz crystal oscillator for the ESP32)
-3 SQW (not used)
-4 RST (not used)
-```
+Go to the images.
 
-Pins @ right side:
-
-```
-1 GND
-2 VCC 3.3V
-3 I2C SCL
-4 I2C SDA
-```
-
-See also the images.
+[Wiring - DS3231MZ breakout-01.png](Wiring - DS3231MZ breakout-01.png)
 
 
 
@@ -55,8 +37,6 @@ See also the images.
 - Connect RTC board pin GND to the MCU pin GND.
 - Connect RTC board pin SCL to a MCU GPIO#21 (Huzzah32 #21 bottomleft).
 - Connect RTC board pin SDA to a MCU GPIO#17 (Huzzah32 #17 bottomleft-1).
-
-https://learn.adafruit.com/adafruit-ds3231-precision-rtc-breakout
 
 
 
@@ -68,8 +48,6 @@ https://learn.adafruit.com/adafruit-ds3231-precision-rtc-breakout
 
 ## Data Sheet
 [Go to the _doc directory for more documents and images.]
-
-http://docs.macetech.com/doku.php/chronodot_v2.0
 
 https://www.maximintegrated.com/en/products/digital/real-time-clocks/DS3231.html
 
@@ -84,7 +62,6 @@ Checkout the project `esp32_ds3231_32khz_oscillator_using_lib`.
 ## FAQ
 
 - OK 3.3V - 5V.
-- The battery holder is designed for a CR1220 3V lithium coin cell.
 - RTC Accuracy: 1 second.
 - The contents of the time and calendar registers are in *the binary-coded decimal (BCD) format*.
 - The board does not contain pull-up resistors when using the I2C protocol. The ESP32's internal pullups are activated in the mjd_ds3231 component.
@@ -97,5 +74,3 @@ Checkout the project `esp32_ds3231_32khz_oscillator_using_lib`.
 
 
 ## Known Issues
-- The board does not fit on a small breadboard if you want to use the pin headers on both the left side (power + I2C pins) and the right side (32K pin). 
-

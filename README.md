@@ -1,12 +1,23 @@
 ## Project Description
 This project demonstrates the basics of using the MJD component "mjd_ds3231" for the following RTC Real Time Clock boards:
-1. The blue circular ChronoDot V2 PCB Real Time Clock Module.
-2. The blue rectangular large ZS042 DS3231 RTC Real Time Clock Module.
-3. The black smaller model (with yellow capacitor) for Raspberry Pi RTC Real Time Clock Module.
+1. The blue circular ChronoDot V2 Real Time Clock Module (recommended).
+2. A barebone DS3231MZ+ SOIC8 150_mil chip on a SOIC8 breakout board (soldered manually).
+3. The blue rectangular large ZS042 DS3231 RTC Real Time Clock Module.
+4. The black smaller model (with yellow capacitor) for Raspberry Pi RTC Real Time Clock Module.
+
+
 
 Use this project to get insights in how to use this component.
 
+
+
 Goto the subdirectory "components/mjd_ds3231" for installation/wiring/usage instructions, data sheets, FAQ, photo's, etc. for the hardware and software.
+
+
+
+## Related ESP-IDF projects
+
+`esp32_ds3231_32khz_oscillator_using_lib` This project demonstrates the hardware and software setup to use a DS3231 as an external 32KHz external oscillator for the ESP32 (and get accurate timings in deep sleep).
 
 
 

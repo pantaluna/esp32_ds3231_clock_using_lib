@@ -49,6 +49,7 @@ uint8_t mjd_byte_to_bcd(uint8_t val) {
 
 /*
  * Convert binary coded decimal to uint8_t
+ * @doc 4 bits for each decimal digit.
  */
 uint8_t mjd_bcd_to_byte(uint8_t val) {
     return ((val / 16 * 10) + (val % 16));
@@ -255,8 +256,18 @@ esp_err_t mjd_crypto_xor_cipher(const uint8_t param_key, uint8_t* param_ptr_valu
 }
 
 /**********
- * DATE TIME
+ * DATE TIME & DELAYS
+ *
  */
+void mjd_delay_millisec(uint32_t param_millisec) {
+    if (param_millisec > 500) {
+        vTaskDelay(param_millisec / portTICK_PERIOD_MS);
+    }
+    else if (param_millisec > 0) {
+        ets_delay_us(param_millisec * 1000);
+    }
+}
+
 uint32_t mjd_seconds_to_milliseconds(uint32_t seconds) {
     return seconds * 1000;
 }
@@ -284,7 +295,7 @@ void mjd_log_time() {
     if (current_time_string[strlen(current_time_string) - 1] == '\n') {
         current_time_string[strlen(current_time_string) - 1] = '\0';
     }
-    ESP_LOGI(TAG, "*** %s %s", buffer, current_time_string);
+    ESP_LOGI(TAG, "*** DATETIME %s %s", buffer, current_time_string);
 }
 
 void mjd_get_current_time_yyyymmddhhmmss(char *ptr_buffer) {
@@ -390,19 +401,19 @@ void mjd_log_clanguage_details() {
     ESP_LOGI(TAG, "    UINT_MAX : %u", UINT_MAX);
 
     ESP_LOGI(TAG, "  int32_t");
-    ESP_LOGI(TAG, "    Storage size (bytes) : %u", sizeof(int32_t));
+    ESP_LOGI(TAG, "    Storage size (bytes): %u", sizeof(int32_t));
     ESP_LOGI(TAG, "    INT_MIN: %i", INT_MIN);
     ESP_LOGI(TAG, "    INT_MAX: %i", INT_MAX);
 
     ESP_LOGI(TAG, "  uint64_t unsigned: bounds, how to print");
-    ESP_LOGI(TAG, "    Storage size (bytes) : %u", sizeof(uint64_t));
+    ESP_LOGI(TAG, "    Storage size (bytes): %u", sizeof(uint64_t));
     uint64_t u64_min = 0ULL;
     uint64_t u64_max = ULONG_LONG_MAX;
     ESP_LOGI(TAG, "    u64_min [EXPECT 0]:                    %" PRIu64 " (0x%" PRIX64 ")", u64_min, u64_min);
     ESP_LOGI(TAG, "    u64_max [EXPECT 18446744073709551615]: %" PRIu64 " (0x%" PRIX64 ")", u64_max, u64_max);
 
     ESP_LOGI(TAG, "  int64_t: bounds, how to print");
-    ESP_LOGI(TAG, "    Storage size (bytes) : %u", sizeof(int64_t));
+    ESP_LOGI(TAG, "    Storage size (bytes): %u", sizeof(int64_t));
     int64_t s64_min = (-1 * __LONG_LONG_MAX__) - 1;
     int64_t s64_max = __LONG_LONG_MAX__; // 0x7FFFFFFFFFFFFFFFLL
     ESP_LOGI(TAG, "     s64_min [EXPECT  -9223372036854775808]: %" PRIi64 " (0x%" PRIX64 ")", s64_min, s64_min);
@@ -449,6 +460,10 @@ esp_err_t mjd_log_memory_statistics() {
 
 /**********
  * ESP32: BOOT INFO, DEEP SLEEP and WAKE UP
+ *
+ * @doc RTC_DATA_ATTR  Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst".
+ *                     Any variable marked with this attribute will keep its value during a deep sleep / wake cycle.
+ *
  */
 static RTC_DATA_ATTR uint32_t mcu_boot_count = 0; //@important Allocated in RTC Fast Memory (= a persistent data area after a deep sleep restart)
 
@@ -517,83 +532,122 @@ void mjd_log_wakeup_details() {
 /**********
  * ESP32: LED
  */
-static mjd_led_config_t led_config_list[GPIO_PIN_COUNT]; // @dep gpio.h
+static mjd_led_config_t _led_config_list[GPIO_PIN_COUNT]; // @dep gpio.h
 
-void mjd_led_config(const mjd_led_config_t *led_config) {
+void mjd_led_config(const mjd_led_config_t *param_ptr_config) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
+    esp_err_t f_retval = ESP_OK;
+
     gpio_config_t io_conf;
-    io_conf.pin_bit_mask = (1ULL << led_config->gpio_num);
+    io_conf.pin_bit_mask = (1ULL << param_ptr_config->gpio_num);
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     io_conf.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&io_conf);
+    f_retval = gpio_config(&io_conf);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "%s(). gpio_config() err %i (%s)", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
 
-    led_config_list[led_config->gpio_num] = *led_config;
-    led_config_list[led_config->gpio_num].is_initialized = 1; // Mark as in use.
+    _led_config_list[param_ptr_config->gpio_num] = *param_ptr_config;
+    _led_config_list[param_ptr_config->gpio_num].is_init = true; // Mark as initialized
+
+    // LABEL
+    cleanup: ;
 }
 
-void mjd_led_on(int gpio_nr) {
+void mjd_led_on(int param_gpio_nr) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    if (led_config_list[gpio_nr].is_initialized != 1) {
-        ESP_LOGE(TAG, "  ABORT. mjd_led_config() was not called beforehand");
+    esp_err_t f_retval = ESP_OK;
+
+    if (_led_config_list[param_gpio_nr].is_init == false) {
+        ESP_LOGE(TAG, "%s(). ABORT. mjd_led_config() was not called beforehand", __FUNCTION__);
         return;
     }
 
     int level = 1;
-    if (led_config_list[gpio_nr].wiring_type == LED_WIRING_TYPE_DIODE_FROM_VCC) {
+    if (_led_config_list[param_gpio_nr].wiring_type == LED_WIRING_TYPE_LED_HIGH_SIDE) {
         level = 0;
     }
-    ESP_ERROR_CHECK(gpio_set_level(gpio_nr, level));
+    f_retval = gpio_set_level(param_gpio_nr, level);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "%s(). gpio_set_level() | err %i (%s)", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
+
+    // LABEL
+    cleanup: ;
+
 }
 
-void mjd_led_off(int gpio_nr) {
+void mjd_led_off(int param_gpio_nr) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    if (led_config_list[gpio_nr].is_initialized != 1) {
-        ESP_LOGE(TAG, "  ABORT. mjd_led_config() was not called beforehand");
+    esp_err_t f_retval = ESP_OK;
+
+    if (_led_config_list[param_gpio_nr].is_init == false) {
+        ESP_LOGE(TAG, "%s(). ABORT. mjd_led_config() was not called beforehand", __FUNCTION__);
         return;
     }
 
     int level = 0;
-    if (led_config_list[gpio_nr].wiring_type == LED_WIRING_TYPE_DIODE_FROM_VCC) {
+    if (_led_config_list[param_gpio_nr].wiring_type == LED_WIRING_TYPE_LED_HIGH_SIDE) {
         level = 1;
     }
-    ESP_ERROR_CHECK(gpio_set_level(gpio_nr, level));
+    f_retval = gpio_set_level(param_gpio_nr, level);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "%s(). gpio_set_level() | err %i (%s)", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
+
+    // LABEL
+    cleanup: ;
 }
 
-void mjd_led_blink_times(int gpio_nr, int times) {
+void mjd_led_blink_times(int param_gpio_nr, int param_count) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    if (led_config_list[gpio_nr].is_initialized != 1) {
+    if (_led_config_list[param_gpio_nr].is_init == false) {
         ESP_LOGE(TAG, "  ABORT. mjd_led_config() was not called beforehand");
-        return;
+        // GOTO
+        goto cleanup;
     }
 
     int i = 0;
-    while (++i <= times) {
-        mjd_led_on(gpio_nr);
+    while (++i <= param_count) {
+        mjd_led_on(param_gpio_nr);
         vTaskDelay(RTOS_DELAY_250MILLISEC);
-        mjd_led_off(gpio_nr);
+        mjd_led_off(param_gpio_nr);
         vTaskDelay(RTOS_DELAY_250MILLISEC);
     }
+
+    // LABEL
+    cleanup: ;
 }
 
-void mjd_led_mark_error(int gpio_nr) {
+void mjd_led_mark_error(int param_gpio_nr) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    if (led_config_list[gpio_nr].is_initialized != 1) {
+    if (_led_config_list[param_gpio_nr].is_init == false) {
         ESP_LOGE(TAG, "  ABORT. mjd_led_config() was not called beforehand");
-        return;
+        // GOTO
+        goto cleanup;
     }
 
     int i = 0;
     while (++i <= 5) {
-        mjd_led_on(gpio_nr);
+        mjd_led_on(param_gpio_nr);
         vTaskDelay(RTOS_DELAY_50MILLISEC);
-        mjd_led_off(gpio_nr);
+        mjd_led_off(param_gpio_nr);
         vTaskDelay(RTOS_DELAY_50MILLISEC);
     }
+
+    // LABEL
+    cleanup: ;
 }
