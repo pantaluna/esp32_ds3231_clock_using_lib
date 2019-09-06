@@ -23,14 +23,13 @@ static const int MY_DS3231_I2C_SDA_GPIO_NUM = CONFIG_MY_DS3231_I2C_SDA_GPIO_NUM;
  *
  */
 static const int MY_DS3231_I2C_MASTER_PORT_NUM = I2C_NUM_0;
-static const int MY_DS3231_I2C_SLAVE_ADDRESS =   0x68;
+static const int MY_DS3231_I2C_SLAVE_ADDRESS = 0x68;
 
 /*
  * FreeRTOS settings
  */
 #define MYAPP_RTOS_TASK_STACK_SIZE_8K (8192)
 #define MYAPP_RTOS_TASK_PRIORITY_NORMAL (RTOS_TASK_PRIORITY_NORMAL)
-
 
 /*
  * TASKS
@@ -55,6 +54,7 @@ void main_task(void *pvParameter) {
      */
     mjd_log_chip_info();
     mjd_log_memory_statistics();
+    mjd_set_timezone_utc(); // @important for this project!
     mjd_log_time();
 
     /////ESP_LOGI(TAG, "@doc Wait X seconds after power-on (start logic analyzer, let peripherals become active, ...)");
@@ -63,18 +63,18 @@ void main_task(void *pvParameter) {
     /*
      * KConfig
      */
-    ESP_LOGI(TAG, "KConfig:");
-    ESP_LOGI(TAG, "MY_LED_ON_DEVBOARD_GPIO_NUM:    %i", MY_LED_ON_DEVBOARD_GPIO_NUM);
-    ESP_LOGI(TAG, "MY_LED_ON_DEVBOARD_WIRING_TYPE: %i", MY_LED_ON_DEVBOARD_WIRING_TYPE);
-    ESP_LOGI(TAG, "MY_DS3231_I2C_SCL_GPIO_NUM:     %i", MY_DS3231_I2C_SCL_GPIO_NUM);
-    ESP_LOGI(TAG, "MY_DS3231_I2C_SDA_GPIO_NUM:     %i", MY_DS3231_I2C_SDA_GPIO_NUM);
+    ESP_LOGI(TAG, "\n*** KConfig:");
+    ESP_LOGI(TAG, "  MY_LED_ON_DEVBOARD_GPIO_NUM:    %i", MY_LED_ON_DEVBOARD_GPIO_NUM);
+    ESP_LOGI(TAG, "  MY_LED_ON_DEVBOARD_WIRING_TYPE: %i", MY_LED_ON_DEVBOARD_WIRING_TYPE);
+    ESP_LOGI(TAG, "  MY_DS3231_I2C_SCL_GPIO_NUM:     %i", MY_DS3231_I2C_SCL_GPIO_NUM);
+    ESP_LOGI(TAG, "  MY_DS3231_I2C_SDA_GPIO_NUM:     %i", MY_DS3231_I2C_SDA_GPIO_NUM);
 
     /*
      * Config
      */
-    ESP_LOGI(TAG, "Config (defines):");
-    ESP_LOGI(TAG, "@info MY_DS3231_I2C_MASTER_PORT_NUM: %i", MY_DS3231_I2C_MASTER_PORT_NUM);
-    ESP_LOGI(TAG, "@info MY_DS3231_I2C_SLAVE_ADDRESS:   0x%X", MY_DS3231_I2C_SLAVE_ADDRESS);
+    ESP_LOGI(TAG, "\n*** Config (defines):");
+    ESP_LOGI(TAG, "  MY_DS3231_I2C_MASTER_PORT_NUM: %i", MY_DS3231_I2C_MASTER_PORT_NUM);
+    ESP_LOGI(TAG, "  MY_DS3231_I2C_SLAVE_ADDRESS:   0x%X", MY_DS3231_I2C_SLAVE_ADDRESS);
 
     /********************************************************************************
      * LED
@@ -88,7 +88,9 @@ void main_task(void *pvParameter) {
     /*
      * MAIN
      */
-    ESP_LOGI(TAG, "***** mjd_ds3231_init()");
+    mjd_set_timezone_utc(); // @important for this project!
+
+    ESP_LOGI(TAG, "\n*** mjd_ds3231_init()");
     mjd_ds3231_config_t config = MJD_DS3231_CONFIG_DEFAULT();
     config.i2c_slave_addr = MY_DS3231_I2C_SLAVE_ADDRESS;
     config.i2c_port_num = MY_DS3231_I2C_MASTER_PORT_NUM;
@@ -101,83 +103,122 @@ void main_task(void *pvParameter) {
         goto cleanup;
     }
 
-    ESP_LOGI(TAG, "***** mjd_ds3231_get_data()");
-    ESP_LOGI(TAG, "*****   GET datetime from the device after power-on (check datetime from previous session is preserved!)");
-    mjd_ds3231_data_t data_first = { 0 };
+    ESP_LOGI(TAG, "\n*** 1st mjd_ds3231_get_data()");
+    ESP_LOGI(TAG, "      GET datetime from the device after power-on (check that the persisted datetime from the previous session is preserved!)");
+    mjd_ds3231_data_t data_first = MJD_DS3231_DATA_DEFAULT();
     f_retval = mjd_ds3231_get_data(&config, &data_first);
     if (f_retval != ESP_OK) {
         ESP_LOGE(TAG, "%s(). mjd_ds3231_get_data() | err %i %s", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
         // GOTO
         goto cleanup;
     }
-    ESP_LOGI(TAG, "  year %u | month %u | day %u | hours %u | minutes %u | seconds %u", data_first.year, data_first.month,
-            data_first.day, data_first.hours, data_first.minutes, data_first.seconds);
-    ESP_LOGI(TAG, "  temperature_celsius: %f", data_first.temperature_celsius);
+    mjd_ds3231_log_data(data_first);
 
-    vTaskDelay(RTOS_DELAY_5SEC);
+    vTaskDelay(RTOS_DELAY_2SEC);
 
     //
-    ESP_LOGI(TAG, "***** mjd_ds3231_set_datetime()");
-    ESP_LOGI(TAG, "*****   SET datetime Thu Dec 31, 2050 23:59:45h");
-    mjd_ds3231_data_t data = { 0 };
-
-    data.year = 2050;
+    ESP_LOGI(TAG, "\n*** mjd_ds3231_set_datetime(): Thu Dec 31, 2025 23:59:45h");
+    mjd_ds3231_data_t data = MJD_DS3231_DATA_DEFAULT();
+    data.year = 2025; // OK 2025, NOT-OK: >=2038
     data.month = 12;
     data.day = 31;
     data.hours = 23;
     data.minutes = 59;
     data.seconds = 45;
-    data.week_day = 5; //1=Sunday
+    /////data.week_day = 5; //1=Sunday not needed
 
-    // These are temporary unit test values.
     /*
-    data.year = 2999; // Maxval = 2099!
-    data.month = 201;
-    data.day = 202;
-    data.hours = 203;
-    data.minutes = 204;
-    data.seconds = 205;
-    data.week_day = 206; //1=Sunday
-    */
+     // These is a set of invalid property values which should all fail in a unit test.
+     data.year = 2999; // Maxval = 2037,2099!
+     data.month = 201;
+     data.day = 202;
+     data.hours = 203;
+     data.minutes = 204;
+     data.seconds = 205;
+     data.week_day = 206;
+     */
 
-    f_retval = mjd_ds3231_set_datetime(&config, &data);
+    f_retval = mjd_ds3231_set_datetime(&config, data);
     if (f_retval != ESP_OK) {
         ESP_LOGE(TAG, "%s(). mjd_ds3231_set_datetime() | err %i %s", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
         // GOTO
         goto cleanup;
     }
 
-    ESP_LOGI(TAG, "***** LOOP 5x");
+    ESP_LOGI(TAG, "\n*** LOOP");
     uint32_t j;
-    for (j = 1; j <= 50000; j++) {
+    for (j = 1; j <= 5; j++) {
+        ESP_LOGI(TAG, "ITER#%3u:", j);
         mjd_led_blink_times(MY_LED_ON_DEVBOARD_GPIO_NUM, 1);
 
-        mjd_ds3231_data_t data = { 0 };
+        ESP_LOGI(TAG, "mjd_ds3231_get_data()");
+        mjd_ds3231_data_t data =
+                    { 0 };
         f_retval = mjd_ds3231_get_data(&config, &data);
         if (f_retval != ESP_OK) {
             ESP_LOGE(TAG, "%s(). mjd_ds3231_get_data() | err %i %s", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
             // GOTO
             goto cleanup;
         }
-
-        ESP_LOGI(TAG, "LOOP#%3u: year %u | month %u | day %u | hours %u | minutes %u | seconds %u", j, data.year, data.month, data.day,
-                data.hours, data.minutes, data.seconds);
-        ESP_LOGI(TAG, "    data->temperature_celsius:  %f", data.temperature_celsius);
+        mjd_ds3231_log_data(data);
 
         vTaskDelay(RTOS_DELAY_1SEC);
-}
+    }
+
+    vTaskDelay(RTOS_DELAY_2SEC);
 
     /********************************************************************************
-     * LOG TIME
+     * RTC Time => MCU Time
      *
-     * @doc The MCU datetime is not necessary the same as the datetime that is stored in the DS3231!
      */
+    ESP_LOGI(TAG, "\n*** Apply RTC Time => MCU Time");
     mjd_log_time();
+
+    ESP_LOGI(TAG, "mjd_ds3231_set_datetime(): May 21, 2003 01:00:00h");
+    mjd_ds3231_data_t data_rtc2mcu = MJD_DS3231_DATA_DEFAULT();
+    data_rtc2mcu.year = 2003;
+    data_rtc2mcu.month = 5;
+    data_rtc2mcu.day = 21;
+    data_rtc2mcu.hours = 01;
+    data_rtc2mcu.minutes = 00;
+    data_rtc2mcu.seconds = 00;
+    mjd_ds3231_log_data(data_rtc2mcu);
+    f_retval = mjd_ds3231_set_datetime(&config, data_rtc2mcu);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "%s(). mjd_ds3231_set_datetime() | err %i %s", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
+
+    mjd_ds3231_apply_rtc_time_to_mcu(&config); // MAIN
+    mjd_log_time();
+
+    vTaskDelay(RTOS_DELAY_2SEC);
+
+    /********************************************************************************
+     * MCU Time => RTC Time
+     *
+     */
+    ESP_LOGI(TAG, "\n*** Save MCU Time => RTC");
+    mjd_log_time();
+    mjd_ds3231_save_mcu_time_to_rtc(&config); // MAIN
+
+    ESP_LOGI(TAG, "mjd_ds3231_get_data()");
+    mjd_ds3231_data_t data_mcu2rtc = MJD_DS3231_DATA_DEFAULT();
+    f_retval = mjd_ds3231_get_data(&config, &data_mcu2rtc);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "%s(). mjd_ds3231_get_data() | err %i %s", __FUNCTION__, f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
+    }
+    mjd_ds3231_log_data(data_mcu2rtc);
+
+    vTaskDelay(RTOS_DELAY_2SEC);
 
     /********************************************************************************
      * DeInit component
      */
-    ESP_LOGI(TAG, "  DeInit DS3231...");
+    ESP_LOGI(TAG, "\n*** DeInit DS3231...");
 
     f_retval = mjd_ds3231_deinit(&config);
     if (f_retval != ESP_OK) {
@@ -186,7 +227,18 @@ void main_task(void *pvParameter) {
         goto cleanup;
     }
 
-    ESP_LOGI(TAG, "==> NEXT STEPS:");
+    /********************************************************************************
+     * Post Action: LOG TIME
+     *
+     */
+    ESP_LOGI(TAG, "\n*** Post Action: LOG TIME");
+    mjd_log_time();
+
+    /********************************************************************************
+     * Post Action: INSTRUCTIONS
+     *
+     */
+    ESP_LOGI(TAG, "\n*** NEXT STEPS:");
     ESP_LOGI(TAG, "- Reboot the ESP32 device (or power cycle the device).");
     ESP_LOGI(TAG, "- Check that the correct datetime was kept intact on the RTC board.");
 

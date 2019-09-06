@@ -1,7 +1,7 @@
 ## Project Description
 This project demonstrates the basics of using the MJD component "mjd_ds3231" for the following RTC Real Time Clock boards:
 1. The blue circular ChronoDot V2 Real Time Clock Module (recommended).
-2. A barebone DS3231MZ+ SOIC8 150_mil chip on a SOIC8 breakout board (soldered manually).
+2. A barebone DS3231MZ+ SOIC-8 150_mil chip on a SOIC-8 breakout board (soldered manually).
 3. The blue rectangular large ZS042 DS3231 RTC Real Time Clock Module.
 4. The black smaller model (with yellow capacitor) for Raspberry Pi RTC Real Time Clock Module.
 
@@ -9,15 +9,13 @@ This project demonstrates the basics of using the MJD component "mjd_ds3231" for
 
 Use this project to get insights in how to use this component.
 
-
-
 Goto the subdirectory "components/mjd_ds3231" for installation/wiring/usage instructions, data sheets, FAQ, photo's, etc. for the hardware and software.
 
 
 
 ## Related ESP-IDF projects
 
-`esp32_ds3231_32khz_oscillator_using_lib` This project demonstrates the hardware and software setup to use a DS3231 as an external 32KHz external oscillator for the ESP32 (and get accurate timings in deep sleep).
+`esp32_ds3231_32khz_oscillator_using_lib` This project demonstrates the hardware and software setup to use a DS3231 as an external 32KHz external oscillator for the ESP32 (and get accurate timings in ESP32's deep sleep as well).
 
 
 
@@ -25,10 +23,8 @@ Goto the subdirectory "components/mjd_ds3231" for installation/wiring/usage inst
 
 ### Hardware
 
-- A decent ESP development board. I suggest to buy a popular development board with good technical documentation and a significant user base. Examples: [Adafruit HUZZAH32](https://www.adafruit.com/product/3405),  [Espressif ESP32-DevKitC](http://espressif.com/en/products/hardware/esp32-devkitc/overview), [Pycom WiPy](https://pycom.io/hardware/), [Wemos D32](https://wiki.wemos.cc/products:d32:d32).
-- The peripherals that are used in the project.
-  @tip The README of each component contains a section "Shop Products".
-  @example A Bosch BME280 meteo sensor breakout board.
+- A decent ESP development board. I suggest to buy a popular development board with good technical documentation and a significant user base. Examples: [LOLIN D32](https://wiki.wemos.cc/products:d32:d32),  [Adafruit HUZZAH32](https://www.adafruit.com/product/3405),  [Espressif ESP32-DevKitC](http://espressif.com/en/products/hardware/esp32-devkitc/overview), [Pycom](https://pycom.io/hardware/).
+- The peripherals that are used in the project. The README.md of each component contains a section "Shop Products".
 
 ### Software: ESP-IDF v3.2
 
